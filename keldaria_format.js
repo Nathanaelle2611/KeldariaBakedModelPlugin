@@ -97,6 +97,18 @@
             cube.init().addTo(undefined, false);
           }
 
+          // 4. Display modes
+          if (model.display && typeof model.display === 'object') {
+            for (const [key, val] of Object.entries(model.display)) {
+              const mode = Project.display_settings && Project.display_settings[key];
+              if (!mode) continue;
+              if (Array.isArray(val.rotation))    mode.rotation    = val.rotation;
+              if (Array.isArray(val.translation)) mode.translation = val.translation;
+              if (Array.isArray(val.scale))       mode.scale       = val.scale;
+              mode.export = true;
+            }
+          }
+
           Canvas.updateAll();
           Validator.validate();
         },
@@ -147,6 +159,20 @@
           model.textures     = textures;
           model.parts        = parts;
 
+          // Display modes — DisplayMode.slots est un tableau de noms de clés,
+          // les instances réelles sont dans Project.display_settings
+          const display = {};
+          for (const key of DisplayMode.slots) {
+            const mode = Project.display_settings && Project.display_settings[key];
+            if (!mode || !mode.export) continue;
+            const entry = {};
+            if (mode.rotation)    entry.rotation    = mode.rotation;
+            if (mode.translation) entry.translation = mode.translation;
+            if (mode.scale)       entry.scale       = mode.scale;
+            if (Object.keys(entry).length) display[key] = entry;
+          }
+          if (Object.keys(display).length) model.display = display;
+
           return compactArrays(JSON.stringify(model, null, 2));
         }
       });
@@ -167,6 +193,7 @@
         java_face_properties: true,
         java_cube_shading_properties: true,
         parent_model_id: true,
+        display_mode: true,
         icon: 'cube',
         codec,
         onStart() {}
